@@ -13,7 +13,7 @@
 
 # Project Implementation
 
-We used Fully Convolutional Netotworks for Semantic Segmentation Task.
+We used Fully Convolutional Networks for Semantic Segmentation Task.
 We trained for road segmentation on [Kitti Road dataset](http://www.cvlibs.net/datasets/kitti/eval_road.php).
 
 ## Results
@@ -25,7 +25,7 @@ Here are some results:
 ![result][result3]
 ![result][result4]
 
-I also showcaased a video: [demo video](./videos/segm.mp4)
+I also showcased a video: [demo video](./videos/segm.mp4)
 
 
 ## Network Architecture
@@ -49,7 +49,7 @@ We trained for:
  - step decay of 0.1
  - Adam Optimizer
  - dropout 0.5
- - L2 regularization for segmentation heads with weight 0.003
+ - L2 regularization for segmentation heads with weight 0.001
 
 ## Training evolution
 
@@ -65,7 +65,7 @@ Scaling is added - stride 8 feature scale is 0.01 stride 16 feature scale is 0.1
 
 ## Data Preprocessing
 
-Added flip/left right augmentation as tensor operations:
+Added flip left/right augmentation as tensor operations:
 
 ```python
 
@@ -130,7 +130,8 @@ class TrainConfig(Config):
  
 ## Fully Convolutional Networks Specific Modules
 
-Since FCN is repretive and recursive, we defined 2 modules:
+Since FCN is repetitive and recursive in structure, we defined 2 modules to separate things that differ
+from things that stay the same:
 
 - `projection block` (1x1) with optional scaling of upstream signal
 - `skip block` for upsample operation and adding with projected upstream signal
@@ -170,7 +171,7 @@ def skip_module(net, up, num_classes,
 
 ```
 
-Using these, FCN-8 is easy to read and implement:
+Using these, `FCN-8s` is easy to read and implement:
 
 ```python
 
@@ -230,7 +231,7 @@ logits, optimizer, total_loss = optimize(net_output, correct_label, learning_rat
 
 ### Summaries
 
-We added summaries for `Total Loss` and `Learning Rate` which are logged each epoch:
+We added summaries for `Total Loss` and `Learning Rate` which are logged at each epoch:
 
 ```python
 
@@ -249,18 +250,17 @@ def add_summaries(sess, total_loss, learning_rate):
 ### Setup Flags
 
 ```python
-flags.DEFINE_boolean('is_training', False, 'Whether the model is training.')
-flags.DEFINE_boolean('video_inference', True, 'If to do video inference.')
-flags.DEFINE_string('summaries_dir', './logs', 'Where to save summaries.')
+
+flags.DEFINE_boolean('is_training', True, 'Whether the model is training.')
+flags.DEFINE_boolean('video_inference', False, 'If to do video inference.')
+flags.DEFINE_string('summaries_dir', './logs/', 'Where to save summaries.')
+flags.DEFINE_string('models_dir', './models/', 'Where to save models.')
 
 ```
 
 Set `is_training` to `True` when training.
-Set `video_inference` to `True` when doing video inference. We expect a trained model in `models` directory.
-```saver.restore(sess, './models/model')```
-
-
-
+Set `video_inference` to `True` when doing video inference. 
+We expect a trained model in `models` directory.
 
 
 
