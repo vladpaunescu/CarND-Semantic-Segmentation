@@ -4,7 +4,28 @@
 [image1]: ./assets/encoder-decoder.jpg
 [image2]: ./assets/summaries.png
 
+[result1]: ./runs/1523058263.5047443/um_000000.png
+[result2]: ./runs/1523058263.5047443/um_000001.png
+[result3]: ./runs/1523058263.5047443/um_000002.png
+[result4]: ./runs/1523058263.5047443/um_000003.png
+
+[video1]: ./videos/segm.mp4.mp4
+
 # Project Implementation
+
+## Results
+
+Here are some results:
+
+![result][result1]
+![result][result2]
+![result][result3]
+![result][result4]
+
+I also showcaased a video:
+
+![video][video1]
+
 
 ## Network Architecture
 
@@ -36,22 +57,14 @@ You can see training evolution in summaries:
 ![summaries][image2]
 
 Loss starts at 1.0 and rapidly decreases towards 0.3, and then slowly towards 0.14.
+Regularization loss is added to cross-entropy loss to prevent overfeating.
+Scaling is added - stride 8 feature scale is 0.01 stride 16 feature scale is 0.1 (configurable)
 
-
-
- 
- 
- 
- 
- 
-
- 
- 
-
+## Implementation Details 
 
 ## Data Preprocessing
 
-Added flip left right augmentation as tensor operations:
+Added flip/left right augmentation as tensor operations:
 
 ```python
 
@@ -97,7 +110,7 @@ def add_preprocessing(image_input, label_input, is_training):
 ```
 
  
-## Implementation Details 
+## Configs
 
 Added `Config` and TrainConfig with following options: 
 
@@ -110,8 +123,130 @@ class TrainConfig(Config):
   LR_DECAY = 0.1
   DECAY_STEPS = 250
 
+```
+
+
+ 
+## Fully Convolutional Networks Specific Modules
+
+Since FCN is repretive and recursive, we defined 2 modules:
+
+- `projection block` (1x1) with optional scaling of upstream signal
+- `skip block` for upsample operation and adding with projected upstream signal
+
+
+```python
+
+def project_1x1(input_tensor, num_outs, scale=None,
+                init_fn=tf.truncated_normal_initializer(stddev=1e-3),
+                regularizer_fn=tf.contrib.layers.l2_regularizer(1e-3)):
+  if scale:
+    input_tensor = input_tensor * scale
+
+  return tf.layers.conv2d(inputs=input_tensor,
+                          filters=num_outs,
+                          kernel_size=(1, 1),
+                          strides=(1, 1),
+                          padding='same',
+                          kernel_initializer=init_fn,
+                          kernel_regularizer=regularizer_fn)
+
+
+def skip_module(net, up, num_classes,
+                init_fn=tf.truncated_normal_initializer(stddev=1e-3),
+                regularizer_fn=tf.contrib.layers.l2_regularizer(1e-3)):
+  # upsample head
+  net = tf.layers.conv2d_transpose(inputs=net,
+                                   filters=num_classes,
+                                   kernel_size=(4, 4),
+                                   strides=(2, 2),
+                                   padding='same',
+                                   kernel_initializer=init_fn,
+                                   kernel_regularizer=regularizer_fn)
+
+  # add skip connection with upstream features
+  return net + up
 
 ```
+
+Using these, FCN-8 is easy to read and implement:
+
+```python
+
+def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes, scale8=0.01, scale16=0.1):
+  """
+  Create the layers for a fully convolutional network.  Build skip-layers using the vgg layers.
+  :param vgg_layer3_out: TF Tensor for VGG Layer 3 output
+  :param vgg_layer4_out: TF Tensor for VGG Layer 4 output
+  :param vgg_layer7_out: TF Tensor for VGG Layer 7 output
+  :param num_classes: Number of classes to classify
+  :return: The Tensor for the last layer of output
+  """
+
+  ''' apply 1x1 projections '''
+
+  proj_1x1_layer3 = project_1x1(vgg_layer3_out, num_classes, scale8)
+  proj_1x1_layer4 = project_1x1(vgg_layer4_out, num_classes, scale16)
+  proj_1x1_layer7 = project_1x1(vgg_layer7_out, num_classes)
+
+  '''skip connections for hour-glass architecture'''
+  net = proj_1x1_layer7
+  net = skip_module(net, proj_1x1_layer4, num_classes)
+  net = skip_module(net, proj_1x1_layer3, num_classes)
+
+  # scale up by x8 to segment full size
+  net = tf.layers.conv2d_transpose(inputs=net,
+                                   filters=num_classes,
+                                   kernel_size=(16, 16),
+                                   strides=(8, 8),
+                                   padding='same',
+                                   kernel_initializer=tf.truncated_normal_initializer(stddev=1e-2),
+                                   kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+
+  return net
+
+```
+
+
+## Bonuses
+
+### Global step and weight decay
+
+By means of tensor operations, we keep a global training step, and let tensorflow runtime control 
+learning rate decay:
+
+```python
+
+# global step
+global_step = tf.train.create_global_step()
+learning_rate = tf.train.exponential_decay(config.LEARNING_RATE, global_step,
+                                          config.DECAY_STEPS, config.LR_DECAY, staircase=True)
+
+logits, optimizer, total_loss = optimize(net_output, correct_label, learning_rate,
+                                         num_classes, global_step=global_step)
+
+```
+
+### Summaries
+
+We added summaries for `Total Loss` and `Learning Rate` which are logged each epoch:
+
+```python
+
+def add_summaries(sess, total_loss, learning_rate):
+
+  with tf.name_scope("summaries"):
+    loss_summary_op = tf.summary.scalar('total_loss', total_loss)
+    lr_summary_op = tf.summary.scalar('learning_rate', learning_rate)
+    writer = tf.summary.FileWriter(FLAGS.summaries_dir, sess.graph)
+    merged = tf.summary.merge_all()
+
+    return merged, writer
+
+```
+
+
+
 
 
 
