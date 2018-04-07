@@ -127,8 +127,8 @@ class TrainConfig(Config):
  
 ### Fully Convolutional Networks Specific Modules
 
-Since FCN is repetitive and recursive in structure, we defined 2 modules to separate things that differ
-from things that stay the same:
+Since FCN is repetitive and recursive in structure, we defined 2 modules _to separate things that differ
+from things that stay the same_:
 
 - `projection block` (1x1) with optional scaling of upstream signal
 - `skip block` for upsample operation and adding with projected upstream signal
