@@ -24,7 +24,7 @@ tf.logging.set_verbosity(tf.logging.INFO)
 flags = tf.app.flags
 flags.DEFINE_boolean('is_training', True, 'Whether the model is training.')
 flags.DEFINE_boolean('video_inference', False, 'If to do video inference.')
-flags.DEFINE_string('summaries_dir', './logs', 'Where to save summaries.')
+flags.DEFINE_string('summaries_dir', './logs/', 'Where to save summaries.')
 flags.DEFINE_string('models_dir', './models/', 'Where to save models.')
 
 FLAGS = flags.FLAGS

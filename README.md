@@ -9,7 +9,7 @@
 [result3]: ./runs/1523058263.5047443/um_000002.png
 [result4]: ./runs/1523058263.5047443/um_000003.png
 
-[video1]: ./videos/segm.mp4
+
 
 # Project Implementation
 
@@ -22,9 +22,7 @@ Here are some results:
 ![result][result3]
 ![result][result4]
 
-I also showcaased a video:
-
-![video][video1]
+I also showcaased a video: [demo video](./videos/segm.mp4)
 
 
 ## Network Architecture
@@ -32,10 +30,10 @@ I also showcaased a video:
 Network is based on `FCN-8s` [[Shelhamer et al, 2016](https://arxiv.org/pdf/1605.06211.pdf)] with the following modifications:
 
 - added scaling ops before applying 1x1 projections
-- adam optimizer
+- Adam optimizer
 - frozen VGG-16 encoder
 
-It is an hourglass encoder-decoder architetcure with skip - connections.
+It is an hourglass encoder-decoder architecture with skip connections.
 
 ![encoder-decoder][image1]
 
@@ -208,7 +206,7 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes, scale8=0
 ```
 
 
-## Bonuses
+##  Tensorflow Bonuses
 
 ### Global step and weight decay
 
@@ -245,6 +243,18 @@ def add_summaries(sess, total_loss, learning_rate):
 
 ```
 
+### Setup Flags
+
+```python
+flags.DEFINE_boolean('is_training', False, 'Whether the model is training.')
+flags.DEFINE_boolean('video_inference', True, 'If to do video inference.')
+flags.DEFINE_string('summaries_dir', './logs', 'Where to save summaries.')
+
+```
+
+Set `is_training` to `True` when training.
+Set `video_inference` to `True` when doing video inference. We expect a trained model in `models` directory.
+```saver.restore(sess, './models/model')```
 
 
 
