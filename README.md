@@ -13,6 +13,9 @@
 
 # Project Implementation
 
+We used Fully Convolutional Netotworks for Semantic Segmentation Task.
+We trained for road segmentation on [Kitti Road dataset](http://www.cvlibs.net/datasets/kitti/eval_road.php).
+
 ## Results
 
 Here are some results:
