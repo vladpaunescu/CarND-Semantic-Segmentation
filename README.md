@@ -9,7 +9,7 @@
 [result3]: ./runs/1523058263.5047443/um_000002.png
 [result4]: ./runs/1523058263.5047443/um_000003.png
 
-[video1]: ./videos/segm.mp4.mp4
+[video1]: ./videos/segm.mp4
 
 # Project Implementation
 
