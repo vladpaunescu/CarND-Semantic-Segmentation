@@ -1,6 +1,120 @@
 # Semantic Segmentation
-### Introduction
-In this project, you'll label the pixels of a road in images using a Fully Convolutional Network (FCN).
+
+
+[image1]: ./assets/encoder-decoder.jpg
+[image2]: ./assets/summaries.png
+
+# Project Implementation
+
+## Network Architecture
+
+Network is based on `FCN-8s` [[Shelhamer et al, 2016](https://arxiv.org/pdf/1605.06211.pdf)] with the following modifications:
+
+- added scaling ops before applying 1x1 projections
+- adam optimizer
+- frozen VGG-16 encoder
+
+It is an hourglass encoder-decoder architetcure with skip - connections.
+
+![encoder-decoder][image1]
+
+## Training Strategy
+We trained for:
+ - 30 epochs
+ - inital learning rate 1e-3
+ - batch size 16
+ - weight decay after 250 iterations (approx 13 epochs)
+ - step decay of 0.1
+ - Adam Optimizer
+ - dropout 0.5
+ - L2 regularization for segmentation heads with weight 0.003
+
+## Training evolution
+
+You can see training evolution in summaries:
+
+![summaries][image2]
+
+Loss starts at 1.0 and rapidly decreases towards 0.3, and then slowly towards 0.14.
+
+
+
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+
+
+## Data Preprocessing
+
+Added flip left right augmentation as tensor operations:
+
+```python
+
+def add_preprocessing(image_input, label_input, is_training):
+  def _maybe_flip(input_tensor, mirror_cond, scope):
+    return tf.cond(
+      mirror_cond,
+      lambda: tf.image.flip_left_right(input_tensor),
+      lambda: input_tensor,
+      name=scope)
+
+  def _preprocess_train(image, label):
+    uniform_random = tf.random_uniform([], 0, 1.0)
+    mirror_cond = tf.less(uniform_random, .5)
+
+    image = _maybe_flip(image, mirror_cond, scope="random_flip_image")
+    label = _maybe_flip(label, mirror_cond, scope="random_flip_label")
+
+    return image, label
+
+  def _preprocess_test(image, label):
+    return image, label
+
+  def _map(fn, arrays, dtypes):
+    # assumes all arrays have same leading dim
+    indices = tf.range(tf.shape(arrays[0])[0])
+    out = tf.map_fn(lambda ii: fn(*[array[ii] for array in arrays]), indices, dtype=dtypes)
+    return out
+
+  mapper = \
+    lambda img, label: tf.cond(
+      tf.equal(
+        is_training,
+        tf.constant(True)),
+      lambda: _preprocess_train(img, label),
+      lambda: _preprocess_test(img, label))
+
+  image_input, label_input = _map(mapper, [image_input, label_input],
+                                  dtypes=(image_input.dtype, label_input.dtype))
+
+  return image_input, label_input
+
+```
+
+ 
+## Implementation Details 
+
+Added `Config` and TrainConfig with following options: 
+
+```python
+
+class TrainConfig(Config):
+  EPOCHS = 30
+  LEARNING_RATE = 1e-3
+  BATCH_SIZE = 16
+  LR_DECAY = 0.1
+  DECAY_STEPS = 250
+
+
+```
+
+
+
 
 ### Setup
 ##### Frameworks and Packages
