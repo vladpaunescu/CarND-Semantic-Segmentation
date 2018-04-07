@@ -1,4 +1,4 @@
-# Semantic Segmentation
+# Semantic Segmentation Project Implementation
 
 
 [image1]: ./assets/encoder-decoder.jpg
@@ -9,9 +9,6 @@
 [result3]: ./runs/1523058263.5047443/um_000002.png
 [result4]: ./runs/1523058263.5047443/um_000003.png
 
-
-
-# Project Implementation
 
 We used Fully Convolutional Networks for Semantic Segmentation Task.
 We trained for road segmentation on [Kitti Road dataset](http://www.cvlibs.net/datasets/kitti/eval_road.php).
@@ -25,7 +22,7 @@ Here are some results:
 ![result][result3]
 ![result][result4]
 
-I also showcased a video: [demo video](./videos/segm.mp4)
+We also showcase a video demo: [demo video](./videos/segm.mp4)
 
 
 ## Network Architecture
@@ -63,7 +60,7 @@ Scaling is added - stride 8 feature scale is 0.01 stride 16 feature scale is 0.1
 
 ## Implementation Details 
 
-## Data Preprocessing
+### Data Preprocessing
 
 Added flip left/right augmentation as tensor operations:
 
@@ -111,7 +108,7 @@ def add_preprocessing(image_input, label_input, is_training):
 ```
 
  
-## Configs
+### Configs
 
 Added `Config` and TrainConfig with following options: 
 
@@ -128,7 +125,7 @@ class TrainConfig(Config):
 
 
  
-## Fully Convolutional Networks Specific Modules
+### Fully Convolutional Networks Specific Modules
 
 Since FCN is repetitive and recursive in structure, we defined 2 modules to separate things that differ
 from things that stay the same:
